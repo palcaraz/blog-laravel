@@ -1,11 +1,13 @@
 body {
-	background: white;
-	color: #222222;
+	background: rgb(37, 36, 36);
+	color: white;
 	max-width: 600px;
 	margin: auto;
 	font-family: sans-serif;
 }
-
+a {
+	color: rgba(51, 201, 221, 0.583);
+}
 p {
 	line-height: 1.6;
 }

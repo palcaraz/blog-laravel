@@ -1,58 +1,52 @@
-<?php 
+<?php
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\File;
-use Spatie\YamlFrontMatter\YamlFrontMatter;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-class Post {
+class Post extends Model
+{
+    use HasFactory;
 
-	public $title;
-	public $excerpt;
-	public $date;
-	public $body;
-	public $slug;
 
-	public function __construct($title, $excerpt, $date, $body, $slug) 
-	{
-		$this->title = $title;
-		$this->excerpt = $excerpt;
-		$this->date = $date;
-		$this->body = $body;
-		$this->slug = $slug;
-		
-	}
+    protected $with = ['category','author'];
 
-	public static function all()
-	{
-		 return cache()->rememberForever('posts.all', function () {
-			return collect(File::files(resource_path("posts")))
-			->map(fn($file) => YamlFrontMatter::parseFile($file))
-			->map(fn ($document) => new Post(
-					$document->title,
-					$document->excerpt,
-					$document->date,
-					$document->body(),
-					$document->slug
-				))
-			->sortByDesc('date');
-		 });
-	}
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 
-	public static function find($slug) {
-	
-		return static::all()->firstWhere('slug', $slug);
-	}
+    public function category()
 
-	public static function findOrFail($slug) {
-	
-		$post = static::find($slug);
+    {
+        return $this->belongsTo(Category::class);
+    }
 
-		if (! $post) {
-			throw new ModelNotFoundException();
-		}
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
-		return $post;
-	}
+    public function scopeFilter($query, array $filters)
+    {
+        $query->when($filters['search'] ?? false, fn($query, $search) =>
+            $query->where(fn($query) =>
+                $query->where('title','like', '%' . $search . '%')
+                ->orWhere('body','like', '%' . $search . '%')
+            )
+        );
+
+        $query->when($filters['category'] ?? false, fn($query, $category) =>
+            $query->whereHas('category',fn($query) =>
+                $query->where('slug', $category)
+            )
+        );
+
+        $query->when($filters['author'] ?? false, fn($query, $author) =>
+            $query->whereHas('author',fn($query) =>
+                $query->where('username', $author)
+            )
+        );
+    }
 }
