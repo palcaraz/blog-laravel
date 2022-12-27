@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
-use App\Models\Category;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
@@ -11,9 +12,10 @@ class PostController extends Controller
     public function index()
     {
 
+        // $this->authorize('admin');
         return view('posts.index', [
             'posts' => Post::latest()->filter(
-                request(['search','category','author'])
+                request(['search', 'category', 'author'])
             )->paginate(6)->withQueryString()
         ]);
     }
@@ -23,11 +25,5 @@ class PostController extends Controller
         return view('posts.show', [
             'post' => $post
         ]);
-    }
-
-    public function create()
-    {
-
-        return view('posts.create');
     }
 }
